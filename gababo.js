@@ -3,12 +3,13 @@
 */
 
 class Tile {
-    constructor(left, top, right, bottom, color) {
+    constructor(left, top, right, bottom, color, mon) {
         this.left = left;
         this.top = top;
         this.right = right;
         this.bottom = bottom;
         this.color = color;
+        this.mon = mon;
     }
 
     draw(){
@@ -21,6 +22,7 @@ class Tile {
 }
 
 let canvas = document.getElementById("myCanvas");
+
 const context = canvas.getContext("2d");
 
 let rsp = document.getElementById("rspGame")
@@ -58,6 +60,7 @@ const tileRow = 10;
 let tiles; // 벽돌 전체
 let exit;
 
+
 // game start여부
 let isMoving = true;
 
@@ -89,7 +92,15 @@ function meetRate()
     
     if(meetMon) {
         isMoving = false;
-        alert("met mon");
+        for(let i = 0; i < tileRow; i++)
+        {
+            for(let j =0; j < tileColumn; j++)
+            {
+                if(isCollisionRectToRect(player, tiles[i][j]))
+                alert(`met ${tiles[i][j].mon}`);
+            }
+        }
+        
         return true; //형식 맞춰주기
     };
 }
@@ -152,6 +163,7 @@ function keyDownEventHandler(e)
             arcPosY += arcMvSpd;
             meetRate();
         }
+
    }
 }
 
@@ -180,21 +192,9 @@ function update()
 
 }
 
-function checkToWin()
-    {
-        if(isCollisionRectToRect(player, exit)){
-            location.reload();
-            alert("clear");
-            return true
-        }
-        return false
-    }
+
 function isCollisionRectToRect(rectA,rectB)
 {
-    //a의 왼쪽과 b의 오른쪽
-    //a의 오쪽과 b의 왼쪽
-    //a의 아래쪽과 b의 위쪽
-    //a의 위쪽과 b의 아래쪽
     if (rectA.left > rectB.right ||
         rectA.right < rectB.left ||
         rectA.top > rectB.bottom ||
@@ -203,6 +203,16 @@ function isCollisionRectToRect(rectA,rectB)
             return false;
         }
     return true;
+}
+
+function checkToWin()
+{
+    if(isCollisionRectToRect(player, exit)){
+        location.reload();
+        alert("clear");
+        return true
+    }
+    return false
 }
 
 
@@ -247,12 +257,23 @@ function drawArc()
     context.beginPath();
 
     context.arc(arcPosX, arcPosY, arcRadius, 0 , 2 * Math.PI,);
-    context.fillStyle = "blue";
+    context.fillStyle = "rebeccapurple";
     context.fill();
 
     context.closePath();
 }
 
+function setTiletype()
+{
+    let ranNum = Math.floor(Math.random()*4);
+    switch(ranNum){
+        case 0 : return {color:"lightcyan", mon:"Gogidong BigFoot"}
+        case 1 : return {color:"tan", mon:"MoraeDoozi"}
+        case 2 : return {color:"darkgreen", mon:"Butterfl"} 
+        case 3 : return {color:"darkblue", mon:"Ggobugi"}
+        default : return {color:"gold", mon:"Legend"}
+    }
+}
 
 function setTiles() 
 {
@@ -262,12 +283,13 @@ function setTiles()
         tiles[i] = [];
         for(let j =0; j < tileColumn; j++)
         {
-
+            let mapInfo = setTiletype()
             tiles[i][j] = new Tile( j * (tileWidth + 1),
             i  * (tileHeight + 1),
             j * (tileWidth + 1) + tileWidth,
             i * (tileHeight + 1) + tileHeight,
-            "green"
+            mapInfo.color,
+            mapInfo.mon
             )
         }
     }
