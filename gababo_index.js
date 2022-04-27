@@ -1,28 +1,32 @@
-/*
-
-*/
-
 class Tile {
-    constructor(left, top, right, bottom, color, mon) {
-        this.left = left;
-        this.top = top;
-        this.right = right;
-        this.bottom = bottom;
+    constructor(iX, iY, color, mon) {
+        this.iX = iX;
+        this.iY = iY;
         this.color = color;
         this.mon = mon;
+        this.mapType = "normal";
     }
 
     draw(){
-            context.rect(this.left, this.top, tileWidth, tileHeight); 
-            context.fillStyle = this.color;
-            
-            context.fill();
+        context.beginPath();
+        context.rect(this.iX * (tileHeight + 1), this.iY  * (tileWidth + 1), tileWidth, tileHeight); 
+        context.fillStyle = this.color;
+        context.fill();
+        context.closePath();
     }
- 
+}
+
+class Player extends Tile {
+    draw(){
+        context.beginPath();
+        context.arc((player.iX + 0.5) * (tileWidth + 1) , (player.iY + 0.5)  * (tileWidth + 1), playerRadius, 0 , 2 * Math.PI,);
+        context.fillStyle = "red";
+        context.fill();
+        context.closePath();
+    }
 }
 
 let canvas = document.getElementById("myCanvas");
-
 const context = canvas.getContext("2d");
 
 let rsp = document.getElementById("rspGame")
@@ -31,72 +35,84 @@ let rsp = document.getElementById("rspGame")
 let userWeapon = 0;
 let monWeapon = 0;
 let buttons = [];
-buttons = [...(document.getElementsByClassName("Weapons"))] 
+buttons = [...(document.getElementsByClassName("Weapons"))];
 // getElementsByClassName은 array가 아니다 => Array.from 또는 ...으로 배열로 바꾸기 가능
 
 // 지갑 및 HP
 let myWallet = 0;
 let hp = 5;
 
-
 // monster 관련
 let meetMon = false;
 
 // player 관련
-const arcRadius = 15;
-let arcPosX = 20;
-let arcPosY = 20;
-let arcMvSpd = 40;
-
-let player = {
-    left : 0, right : 0, top : 0, bottom : 0
-};
+let player;
+const playerRadius = 15;
+let playerIX = 0;
+let playerIY = 0;
 
 // 맵 관련
-const tileWidth = 39; 
-const tileHeight = 39; 
+const tileWidth = 39;
+const tileHeight = 39;
 const tileColumn = 10;
 const tileRow = 10;
 let tiles; // 벽돌 전체
 
 let exit;
-let exitIndex=[];
+let exitIndex;
+let exitIX;
+let exitIY;
 
 let store;
-let storeIndex=[];
-
-let exitIndexX
-let exitIndexY
-let storeIndexX
-let storeIndexY
+let storeIndex;
+let storeIX;
+let storeIY;
 
 
 // game start여부
 let isMoving = true;
 
+
 // 키처리 함수 추가
 document.addEventListener("keydown", keyDownEventHandler);
-document.addEventListener("keyup", keyUpEventHandler);
+
 
 // 가위바위보 버튼 누를 시 // onclick 아니라 click
 buttons.forEach((button)=> button.addEventListener("click", isRspWin))
 
-// player position 변경
-function setPlayerPos()
+
+function checkToWin()
 {
-    player.left = arcPosX - arcRadius;
-    player.right = arcPosX + arcRadius;
-    player.top = arcPosY - arcRadius;
-    player.bottom = arcPosY + arcRadius;
+    if(is2DIndexSame(player, exit)){
+        location.reload();
+        alert("clear");
+        return true
+    }
+    return false
 }
 
 // 움직일 때마다 랜덤 확률
-// > TODO : 클리어할 때 몬스터를 만나지 않으려면 어떻게 할까?
+// > TODO : 클리어할 때 몬스터를 만나지 않으려면 어떻게 할까? ->키누를 때 클리어먼저 판별 if(checkTowin) return false
 function meetRate() 
 {   
-    setPlayerPos();
     if(checkToWin()){
         return false;
+    }
+    if(tiles[player.iX][player.iY].mapType == "store"){
+        if(myWallet<50)
+        {
+            alert("50G이상 필요")
+        }
+        else
+        {
+            if(confirm("50G를 소모하여 체력회복?")){
+                hp++;
+                myWallet -= 50;
+                alert("체력회복됨")
+            } 
+        }
+        
+        return false
     }
     meetMon = (Math.round(Math.random()*10)) < 2;
     
@@ -106,16 +122,13 @@ function meetRate()
         {
             for(let j =0; j < tileColumn; j++)
             {
-                if(isCollisionRectToRect(player, tiles[i][j]))
+                if(is2DIndexSame(player, tiles[i][j]))
                 alert(`met ${tiles[i][j].mon}`);
             }
         }
-        
         return true; //형식 맞춰주기
     };
 }
-
-
 
 // 가바보 게임 승패 결정
 // 바위 0 가위 1 보 2
@@ -142,53 +155,46 @@ function isRspWin()
             alert("win");
             myWallet += Math.floor(Math.random()*99)
     }
-    
     isMoving = true;
-    
 }
 
 function keyDownEventHandler(e) 
 {   
    if(isMoving)
    {
-        if(e.key === "ArrowRight" && arcPosX < canvas.width - arcRadius - tileWidth)
+        if(e.key === "ArrowRight" && player.iX < 9)
         {
             // 플레이어를 오른쪽으로 이동
-            arcPosX+= arcMvSpd;
+            player.iX ++;
             meetRate();
         }
-        else if(e.key === "ArrowLeft" && arcPosX - arcRadius - tileWidth > 0)
+        else if(e.key === "ArrowLeft" && player.iX >0 )
         {
             // 플레이어를 왼쪽으로 이동
-            arcPosX -= arcMvSpd;
+            player.iX--;
             meetRate();
         }
-        else if(e.key === "ArrowUp" && arcPosY - arcRadius - tileHeight > 0)
+        else if(e.key === "ArrowUp" && player.iY > 0)
         {
-            arcPosY -= arcMvSpd;
+            player.iY--;
             meetRate();
         }
-        else if(e.key === "ArrowDown" && arcPosY < canvas.width - arcRadius - tileHeight)
+        else if(e.key === "ArrowDown" && player.iY <9)
         {
-            arcPosY += arcMvSpd;
+            player.iY++;
             meetRate();
         }
 
    }
 }
 
-function keyUpEventHandler()
-{
-
-}
-
 function update() 
 {
     // 데이터 수정 
-    // 플레이어의 위치 이동, 지갑 및 hp update
+    // 지갑 및 hp update
 
-    document.getElementById("wallet").innerHTML = myWallet;
-    document.getElementById("hp").innerHTML = hp;
+    document.getElementById("wallet").innerHTML = `GOLD : ${myWallet}G`;
+    document.getElementById("hp").innerHTML = `HP : ${hp}`;
 
     if(!isMoving) {
         rsp.style.visibility = "visible";
@@ -196,35 +202,17 @@ function update()
     else{
         rsp.style.visibility = "hidden";
     }
-
-    // 게임 클리어 확인
-    // checkToWin() -> meetRate에 조건으로 합쳐버림
-
 }
 
-
-function isCollisionRectToRect(rectA,rectB)
+function is2DIndexSame(tileA,tileB)
 {
-    if (rectA.left > rectB.right ||
-        rectA.right < rectB.left ||
-        rectA.top > rectB.bottom ||
-        rectA.bottom < rectB.top)
+    if (tileA.iX == tileB.iX &&
+        tileA.iY == tileB.iY)
         {
-            return false;
+            return true;
         }
-    return true;
+    return false;
 }
-
-function checkToWin()
-{
-    if(isCollisionRectToRect(player, exit)){
-        location.reload();
-        alert("clear");
-        return true
-    }
-    return false
-}
-
 
 function draw() 
 {
@@ -235,7 +223,7 @@ function draw()
     // 다른 도형 그리기 
 
     drawTiles();
-    drawArc();
+    player.draw();
 }
 
 function drawCanvas() 
@@ -255,22 +243,9 @@ function drawTiles()
     {
         for(let j =0; j < tileColumn; j++)
         {
-            context.beginPath();
             tiles[i][j].draw()
-            context.closePath();
         }
     }
-}
-
-function drawArc() 
-{
-    context.beginPath();
-
-    context.arc(arcPosX, arcPosY, arcRadius, 0 , 2 * Math.PI,);
-    context.fillStyle = "red";
-    context.fill();
-
-    context.closePath();
 }
 
 function setTiletype()
@@ -285,7 +260,7 @@ function setTiletype()
     }
 }
 
-function setTiles() 
+function setTiles()
 {
     tiles = [];
     for(let i = 0; i < tileRow; i++)
@@ -294,15 +269,19 @@ function setTiles()
         for(let j =0; j < tileColumn; j++)
         {
             let mapInfo = setTiletype()
-            tiles[i][j] = new Tile( j * (tileWidth + 1),
-            i  * (tileHeight + 1),
-            j * (tileWidth + 1) + tileWidth,
-            i * (tileHeight + 1) + tileHeight,
-            mapInfo.color,
-            mapInfo.mon
+            tiles[i][j] = new Tile( 
+                i,
+                j,
+                mapInfo.color,
+                mapInfo.mon
             )
         }
     }
+}
+
+function setPlayer()
+{
+    player = new Player(playerIX,playerIY,"red")
 }
 
 function setSpecialTile()
@@ -312,27 +291,27 @@ function setSpecialTile()
         exitIndex = createRandomIndex();
         storeIndex = createRandomIndex();
     }
-    exitIndexX = exitIndex[0]
-    exitIndexY = exitIndex[1]
-    storeIndexX = storeIndex[0]
-    storeIndexY = storeIndex[1]
+    exitIX = exitIndex[0]
+    exitIY = exitIndex[1]
+    storeIX = storeIndex[0]
+    storeIY = storeIndex[1]
 
     console.log(exitIndex)
     console.log(storeIndex)
 
-    exit = tiles[exitIndexY][exitIndexX] = new Tile( exitIndexX * (tileWidth + 1),
-    exitIndexY  * (tileHeight + 1),
-    exitIndexX * (tileWidth + 1) + tileWidth,
-    exitIndexY * (tileHeight + 1) + tileHeight,
-    "black"
+    exit = tiles[exitIX][exitIY] = new Tile( 
+        exitIX,
+        exitIY,
+        "black"
     )
 
-    store = tiles[storeIndexY][storeIndexX] = new Tile( storeIndexX * (tileWidth + 1),
-    storeIndexY  * (tileHeight + 1),
-    storeIndexX * (tileWidth + 1) + tileWidth,
-    storeIndexY * (tileHeight + 1) + tileHeight,
-    "rebeccapurple",
+    store = tiles[storeIX][storeIY] = new Tile( 
+        storeIX,
+        storeIY,
+        "rebeccapurple",
     )
+
+    store.mapType = "store"
     console.log(tiles)
 }
 
@@ -355,6 +334,6 @@ function createRandomIndex()
 
 setTiles();
 setSpecialTile();
-
+setPlayer();
 setInterval(draw, 10);
 setInterval(update, 10);

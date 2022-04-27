@@ -17,4 +17,79 @@ V3에서 할 것
          > 굳
 
 - 탈출구와 상점을 랜덤으로 생성한다고 하면 예외처리는 어떻게 할 것인가
+    ->random index를 생성하고 index가 겹치면 다시 생성하게 한다 2Darray라서 [x index, y index]로 비교하려했는데 array는 단순하게 ==로 비교가 안됨
+        > JSON.stringify(arr)로 비교하거나 arr1[0]==arr2[0] && arr1[1]==arr2[1] 로 비교한다
+            했는데 black아닌 곳에 black이 되고 black과 purple은 안뜨네???
+            모양이 대칭으로 undefined가 뜬다 -->> xy 위치가 바꼈었네
+
+- 충돌을 겹쳤을 때가 아니라 index가 동일할 때로 바꿔보자!!!!
+    maptype 을 normal, store로 나눈다
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@@@@@@@@@@@@@@@@ a-ha moment @@@@@@@@@@@@@@@@@
+
+let a = 3 하면 a에는 3이라는 값이 담긴다
+let b = a 라고 하면 b에는 a의 값인 3이 담긴다
+b = 2 라고 수정해도 여전히 a = 3이다
+========================================
+
+array나 object의 경우
+
+let a =[1,2]
+let b = a라고 하면 b에는 a의 주소값이 담긴다
+b[0] = 3 으로 하면 주소의 array가 바뀌기 때문에 
+a = [3,2]
+
+let a =[1,2]
+let b = a
+b = [3,2] 라고 할 경우 새로운 주소가 할당되기 때문에
+a = [1,2]로 그대로 찍힘
+
+
+
+let a = {p1:1,p2:2}
+let b = a라고 하면 주소 값이 담긴다
+b.p1 = 3으로 하면 해당 주소의 object가 바뀌기 때문에
+a = {p1:3,p2:2}
+
+let a = {p1:1,p2:2}
+let b = a
+b = {p1:3,p2:2} 라고 할 경우 새로운 object의 주소가 할당되기 때문에
+a = {p1:1,p2:2}로 그대로 찍힘
+
+
+
+
+
+obj = {name:value} 일 때
+obj.name = value 이다
+
+array에서는 array[0] 이런 방식으로 사용
+
+그런데 이건 대체 머선 일이고?????
+
+let arr = [1, 2, x = 2]
+arr.why = 3
+
+console.log(arr)     // [ 1, 2, 2, why: 3 ] 인데 arr.length = 3이다
+arr를 살펴보면 0:1 1:2 3:2 why:3으로 나온다
+    >그렇다면 arr.3 =4해보면??? arr.3 은 아예 오류남
+console.log(arr.why) // 3
+console.log(arr[3])  // undefined
+console.log(arr[2])  // 2
+console.log(x)       // 2
 
