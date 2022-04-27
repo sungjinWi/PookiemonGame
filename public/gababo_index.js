@@ -5,14 +5,23 @@ class Tile {
         this.color = color;
         this.mon = mon;
         this.mapType = "normal";
+        this.isSight = 0;
     }
 
     draw(){
         context.beginPath();
-        context.rect(this.iX * (tileHeight + 1), this.iY  * (tileWidth + 1), tileWidth, tileHeight); 
-        context.fillStyle = this.color;
+        context.rect(this.iX * (tileHeight + 1), this.iY  * (tileWidth + 1), tileWidth, tileHeight);
+        context.fillStyle = checkSight(this)
         context.fill();
         context.closePath();
+        
+        if(this.mapType != "normal")
+        {
+            context.beginPath();
+            context.font = '10px serif';
+            context.strokeText(`${this.mapType}`, this.iX * (tileHeight + 1), (this.iY+0.5)  * (tileWidth + 1));
+            context.closePath();
+        }
     }
 }
 
@@ -46,7 +55,7 @@ let hp = 5;
 let meetMon = false;
 
 // player 관련
-let player;
+let player = {iX : 0, iY : 0};
 const playerRadius = 15;
 let playerIX = 0;
 let playerIY = 0;
@@ -162,6 +171,7 @@ function keyDownEventHandler(e)
 {   
    if(isMoving)
    {
+        
         if(e.key === "ArrowRight" && player.iX < 9)
         {
             // 플레이어를 오른쪽으로 이동
@@ -184,7 +194,6 @@ function keyDownEventHandler(e)
             player.iY++;
             meetRate();
         }
-
    }
 }
 
@@ -202,7 +211,10 @@ function update()
     else{
         rsp.style.visibility = "hidden";
     }
+
+    updateSight()
 }
+
 
 function is2DIndexSame(tileA,tileB)
 {
@@ -310,7 +322,7 @@ function setSpecialTile()
         storeIY,
         "rebeccapurple",
     )
-
+    exit.mapType = "exit"
     store.mapType = "store"
     console.log(tiles)
 }
@@ -330,6 +342,46 @@ function createRandomIndex()
     }
     randomIndex = [randomIndexX, randomIndexY];
     return randomIndex;
+}
+
+function checkSight(tile)
+{
+    if(!tile.isSight)
+    {
+        return "black";
+    }
+    else if(closeToPlayer(tile) && tile.isSight)
+    {
+        return tile.color;
+    }
+    else if(!closeToPlayer(tile) && tile.isSight)
+    {
+        return "gray"
+    } 
+}
+
+function closeToPlayer(tile)
+{
+    if(Math.abs(player.iX - tile.iX) <=1 && Math.abs(player.iY - tile.iY) <=1 )
+    {
+        return true;
+    }
+    return false;
+}
+
+function updateSight()
+{
+    for(let i = 0; i < tileRow; i++)
+    {
+        for(let j =0; j < tileColumn; j++)
+        {
+            if(closeToPlayer(tiles[i][j]))
+            {
+                tiles[i][j].isSight = 1
+            }
+            
+        }
+    }
 }
 
 setTiles();
